@@ -1,0 +1,10 @@
+{
+  "id": "html-playground",
+  "name": "HTML Playground",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.0",
+  "description": "Host live HTML, CSS and JavaScript apps from your vault in a sandbox, with a validated bridge to your notes.",
+  "author": "Anthirayas",
+  "authorUrl": "https://github.com/jrayas",
+  "isDesktopOnly": false
+}

@@ -1,0 +1,6 @@
+body { margin: 0; padding: 16px; font-family: var(--font-text); color: var(--text-normal); background: var(--background-primary); line-height: 1.5; }
+h1 { margin: 0 0 4px; }
+.muted { color: var(--text-muted); margin-top: 0; }
+dt { font-weight: 600; margin-top: 12px; }
+dd { margin: 0; }
+ul { margin: 0; padding-left: 18px; }

@@ -1,0 +1,90 @@
+/* HTML Playground */
+
+.hp-app {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.hp-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--size-4-2);
+  padding: var(--size-4-1) var(--size-4-2);
+  border-bottom: 1px solid var(--background-modifier-border);
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+}
+
+.hp-bar-title {
+  font-weight: var(--font-semibold);
+  color: var(--text-normal);
+}
+
+.hp-badge {
+  padding: 0 var(--size-4-2);
+  border-radius: var(--radius-s);
+  background: var(--background-modifier-hover);
+  font-size: var(--font-ui-smaller);
+}
+
+.hp-badge-ai {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.hp-warnings {
+  margin-left: auto;
+}
+
+.hp-warnings summary {
+  cursor: pointer;
+  color: var(--text-warning);
+}
+
+.hp-warnings ul {
+  margin: var(--size-4-1) 0 0;
+  padding-left: var(--size-4-4);
+  max-width: 60ch;
+}
+
+.hp-frame {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  border: 0;
+  background: var(--background-primary);
+}
+
+.hp-error {
+  padding: var(--size-4-4);
+  color: var(--text-error);
+}
+
+.hp-embed {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  overflow: hidden;
+}
+
+/* Touch-friendly targets on mobile. */
+.is-mobile .hp-bar {
+  min-height: 44px;
+}
+
+/* Snapshots and log screens */
+.hp-snapshot-list { max-height: 60vh; overflow-y: auto; margin-top: var(--size-4-2); }
+.hp-row { display: flex; align-items: center; gap: var(--size-4-2); padding: var(--size-4-1) 0; border-bottom: 1px solid var(--background-modifier-border); }
+.hp-row-text { flex: 1 1 auto; min-width: 0; }
+.hp-row-path { overflow-wrap: anywhere; }
+.hp-log-body { overflow: auto; padding: var(--size-4-2); }
+.hp-log-table { width: 100%; font-size: var(--font-ui-small); }
+.hp-log-table th, .hp-log-table td { text-align: left; padding: var(--size-4-1) var(--size-4-2); vertical-align: top; overflow-wrap: anywhere; }
+.hp-bad { color: var(--text-error); }
+.hp-trust-row { display: flex; align-items: center; justify-content: space-between; gap: var(--size-4-2); }
+
+/* Excluded paths: the built-in rows are read-only */
+.hp-locked { opacity: 0.75; }

@@ -1,0 +1,7 @@
+{
+  "name": "Hello",
+  "version": "1.0.0",
+  "description": "A starter app: shows the theme and the parameters a note gave it. It needs no permissions.",
+  "entry": "index.html",
+  "permissions": []
+}

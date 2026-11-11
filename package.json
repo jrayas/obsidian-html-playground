@@ -1,0 +1,23 @@
+{
+  "name": "html-playground",
+  "version": "0.1.0",
+  "description": "Host live HTML/CSS/JS apps from your vault in a sandbox, with a validated bridge to your notes.",
+  "author": "Anthirayas",
+  "license": "MIT",
+  "main": "main.js",
+  "repository": { "type": "git", "url": "git+https://github.com/jrayas/obsidian-html-playground.git" },
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "tsc --noEmit --skipLibCheck && node esbuild.config.mjs production",
+    "typecheck": "tsc --noEmit --skipLibCheck",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.28.2",
+    "obsidian": "latest",
+    "tslib": "^2.6.0",
+    "typescript": "^5.6.0",
+    "vitest": "^5.1.0"
+  }
+}
