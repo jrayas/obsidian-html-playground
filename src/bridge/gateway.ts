@@ -352,7 +352,7 @@ export class VaultGateway {
       if (!existing && viewState.type === "markdown" && (viewState.state as { file?: string } | undefined)?.file === path) existing = leaf;
     });
     if (existing) {
-      await this.app.workspace.revealLeaf(existing);
+      this.app.workspace.setActiveLeaf(existing, { focus: true });
       return;
     }
     await this.app.workspace.getLeaf("tab").openFile(file);

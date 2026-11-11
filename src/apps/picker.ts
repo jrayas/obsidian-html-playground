@@ -16,7 +16,7 @@ export function findManifests(app: App, appsFolder: string, exclusions: readonly
 export async function openApp(app: App, manifestPath: string): Promise<void> {
   const leaf = app.workspace.getLeaf("tab");
   await leaf.setViewState({ type: VIEW_TYPE_APP, active: true, state: { manifestPath } });
-  void app.workspace.revealLeaf(leaf);
+  app.workspace.setActiveLeaf(leaf, { focus: true });
 }
 
 export class AppPickerModal extends FuzzySuggestModal<string> {

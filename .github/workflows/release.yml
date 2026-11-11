@@ -9,6 +9,8 @@ on:
 
 permissions:
   contents: write
+  id-token: write       # lets the attestation step sign with this workflow's identity
+  attestations: write
 
 jobs:
   release:
@@ -29,6 +31,13 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            main.js
+            manifest.json
+            styles.css
       - name: Create the release
         env:
           GH_TOKEN: ${{ github.token }}

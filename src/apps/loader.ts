@@ -22,6 +22,8 @@ import {
   mimeFor,
 } from "./refs";
 
+const BOOTSTRAP_MARKER = "hp-bootstrap-marker";
+
 export interface LoaderIO {
   readText(path: string): Promise<string | null>;
   readBinary(path: string): Promise<ArrayBuffer | null>;
@@ -239,12 +241,15 @@ export async function loadApp(options: LoadOptions): Promise<LoadedApp> {
   const theme = doc.createElement("style");
   theme.setAttribute("data-hp", "theme");
   theme.textContent = themeToCss(options.theme);
-  const bootstrap = doc.createElement("script");
-  bootstrap.textContent = escapeInlineScript(buildBootstrap(options.nonce));
-  doc.head.prepend(csp, theme, bootstrap);
+  // The bootstrap is the plugin's own fixed code (src/bootstrap/script.ts), never anything from the app or the note.
+  // It is written into the page text at a marker that sits right after the CSP and theme, so it runs first. The
+  // marker is the first comment in <head>, so a comment an app might contain cannot take its place.
+  doc.head.prepend(csp, theme, doc.createComment(BOOTSTRAP_MARKER));
+  const bootstrapTag = `<script>${escapeInlineScript(buildBootstrap(options.nonce))}</script>`;
+  const page = doc.documentElement.outerHTML.replace(`<!--${BOOTSTRAP_MARKER}-->`, () => bootstrapTag);
 
   return {
-    html: "<!DOCTYPE html>\n" + doc.documentElement.outerHTML,
+    html: "<!DOCTYPE html>\n" + page,
     blobUrls,
     warnings,
   };

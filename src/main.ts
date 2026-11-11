@@ -148,7 +148,7 @@ export default class HtmlPlaygroundPlugin extends Plugin {
     const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_LOG)[0];
     const leaf = existing ?? this.app.workspace.getLeaf("tab");
     if (!existing) await leaf.setViewState({ type: VIEW_TYPE_LOG, active: true });
-    void this.app.workspace.revealLeaf(leaf);
+    this.app.workspace.setActiveLeaf(leaf, { focus: true });
   }
 
   /** Restore a snapshot (a user action). Used by the Snapshots screen. */

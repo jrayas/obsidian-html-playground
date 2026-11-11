@@ -107,6 +107,9 @@ Details: [security.md](docs/security.md).
 
 - **Network:** the plugin makes no network requests of its own. Apps have none either, unless you add a domain to the global allow-list **and** the app's manifest lists it. Remote scripts and styles are never allowed.
 - **No telemetry, no ads, no payments, no account.**
+- **Code that runs:** each app's page is built from the app's own files (its HTML, CSS and scripts) plus one fixed bootstrap script that belongs to this plugin. All of it runs only inside the sandboxed iframe. The plugin never downloads code, and remote scripts and styles are never allowed.
+- **Listing notes:** an app that you give the file listing or search permissions can see the paths of notes inside its folder scopes (and nothing excluded). It cannot do so without declaring that permission.
+- **Verify a release:** the release files carry GitHub build attestations, so you can check they were built from this repository with `gh attestation verify main.js --repo jrayas/obsidian-html-playground`.
 - **Files:** the plugin reads and writes vault files only on behalf of an app, within that app's declared permissions and scopes. It does not read or write files outside your vault. For folder moves and deletes it lists a folder's contents from disk (read-only) so that hidden items are not moved or deleted unseen.
 - **Stored on your device (not in your vault, not synced):** snapshots and the write log (in the browser database), and which apps you approved as trusted (in local storage).
 
