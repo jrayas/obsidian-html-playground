@@ -112,7 +112,7 @@ Details: [security.md](docs/security.md).
 
 ## Compatibility
 
-Works on desktop and mobile (`isDesktopOnly` is false). Tested on macOS desktop and an Android emulator. Needs Obsidian 1.5.0 or later.
+Works on desktop and mobile (`isDesktopOnly` is false). Tested on macOS desktop and an Android emulator. Needs Obsidian 1.5.7 or later.
 
 ## Development
 
@@ -120,6 +120,7 @@ Works on desktop and mobile (`isDesktopOnly` is false). Tested on macOS desktop 
 npm ci
 npm run build    # typecheck, then bundle to main.js
 npm test
+npm run lint     # the same checks Obsidian's community plugin scanner runs
 ```
 
 Copy or symlink the folder to `<vault>/.obsidian/plugins/html-playground/` to try a build.

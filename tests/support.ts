@@ -120,7 +120,7 @@ export function mutableApp(initial: Record<string, string>, hiddenOnDisk: string
       out[f.path] = {};
       for (const m of f.content.matchAll(/\[\[([^\]|#]+)/g)) {
         const target = byName.get((m[1] ?? "").trim().toLowerCase());
-        if (target) out[f.path]![target] = (out[f.path]![target] ?? 0) + 1;
+        if (target) out[f.path][target] = (out[f.path][target] ?? 0) + 1;
       }
     }
     return out;
@@ -178,7 +178,7 @@ export function mutableApp(initial: Record<string, string>, hiddenOnDisk: string
             let current = "";
             const parts = h.split("/");
             for (let i = 0; i < parts.length; i++) {
-              current = current === "" ? (parts[i] as string) : `${current}/${parts[i]}`;
+              current = current === "" ? (parts[i]) : `${current}/${parts[i]}`;
               consider(current, i < parts.length - 1);
             }
           }

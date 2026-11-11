@@ -51,7 +51,7 @@ function fakeApp(files: Record<string, string>) {
     for (const e of entries) {
       if (!e.path.startsWith(prefix)) continue;
       const rest = e.path.slice(prefix.length);
-      const first = rest.split("/")[0] as string;
+      const first = rest.split("/")[0];
       if (rest.includes("/")) names.set(prefix + first, { path: prefix + first, children: [] });
       else names.set(e.path, e);
     }
@@ -96,7 +96,7 @@ function hostFor(
   const call = async (op: string, args: Record<string, unknown> = {}) => {
     const before = sent.length;
     await host.handle({ v: 1, id: `r${++n}`, type: "request", op, args });
-    return sent[before] as BridgeResponse;
+    return sent[before];
   };
   return { call, sent, host };
 }

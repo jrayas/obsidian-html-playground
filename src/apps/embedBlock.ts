@@ -35,7 +35,7 @@ const NAME = /^[a-z0-9_-]{1,32}$/;
 const LINE = /^([^:]+?)\s*:\s*(.*)$/;
 /** Names that would be dangerous or confusing as object keys in an app. */
 const FORBIDDEN = new Set(["__proto__", "constructor", "prototype"]);
-// eslint-disable-next-line no-control-regex
+// eslint-disable-next-line no-control-regex -- control characters are the point: names containing them are refused
 const CONTROL = /[\u0000-\u001f\u007f]/;
 
 export function parseEmbedBlock(source: string): EmbedParse {

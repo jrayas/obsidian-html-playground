@@ -12,7 +12,7 @@ const MAX_PATHS = 50;
 
 /** App-supplied text goes into the log, so make it printable and bounded. */
 export function cleanLogText(value: string): string {
-  // eslint-disable-next-line no-control-regex
+  // eslint-disable-next-line no-control-regex -- control characters are the point: names containing them are refused
   return value.replace(/[\u0000-\u001f\u007f]/g, "?").slice(0, MAX_PATH_LENGTH);
 }
 

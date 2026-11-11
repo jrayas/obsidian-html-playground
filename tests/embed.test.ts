@@ -77,7 +77,7 @@ describe("embed block parser", () => {
     expect(Object.getPrototypeOf(p)).toBeNull();
     expect(p.widget).toBe("microstrip");
     expect((p as Record<string, unknown>).constructor).toBeUndefined();
-    expect((p as Record<string, unknown>).toString).toBeUndefined();
+    expect(Reflect.get(p, "toString")).toBeUndefined();
   });
 });
 
@@ -104,7 +104,7 @@ function hostFor(opts: { embed?: { sourcePath: string; params: Record<string, st
   const call = async (op: string, args: Record<string, unknown> = {}) => {
     const before = sent.length;
     await host.handle({ v: 1, id: `r${++n}`, type: "request", op, args });
-    return sent[before] as BridgeResponse;
+    return sent[before];
   };
   return { call };
 }

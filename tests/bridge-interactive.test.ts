@@ -47,7 +47,7 @@ function host(extra: Partial<AppManifest> = {}, opts: { now?: () => number } = {
   const call = async (op: string, args: Record<string, unknown> = {}) => {
     const before = sent.length;
     await h.handle({ v: 1, id: `i${++n}`, type: "request", op, args });
-    return sent[before] as BridgeResponse;
+    return sent[before];
   };
   return { call, host: h, vault, services, events };
 }
@@ -447,7 +447,7 @@ describe("TrustManager", () => {
   it("the dialog names the app and spells out what trust does and never does", async () => {
     const { manager, asked } = setup([false]);
     await manager.ensure("Apps/T", manifest({ trusted: true, name: "Calc", permissions: ["files.create"], writeScopes: ["Notes"] }));
-    const text = asked[0]!.details.join("\n");
+    const text = asked[0].details.join("\n");
     expect(asked[0]).toMatchObject({ app: "Apps/T", title: "Trust this app?" });
     for (const needle of ["Calc", "files.create", "Notes", "write anywhere", "never lets it", "excluded or hidden", "manifest.json", "snapshots", "network", "this device only"]) {
       expect(text, needle).toContain(needle);

@@ -38,7 +38,7 @@ export function planPrune(metas: readonly SnapshotMeta[], policy: RetentionPolic
   const kept = fresh.filter((m) => !doomed.has(m.id)).sort(newestFirst); // newest first
   let total = kept.reduce((sum, m) => sum + m.size, 0);
   for (let i = kept.length - 1; i >= 0 && total > policy.maxBytes; i--) {
-    const oldest = kept[i] as SnapshotMeta;
+    const oldest = kept[i];
     doomed.add(oldest.id);
     total -= oldest.size;
   }

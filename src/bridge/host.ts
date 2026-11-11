@@ -57,7 +57,7 @@ export interface CallContext {
   /** Snapshot a note's current text before changing it. Throws (refusing the write) if that fails. */
   snapshot(path: string, content: string, op: string): Promise<void>;
   /** True when a real vault path may appear in results for this app. */
-  visible(path: string): boolean;
+  visible: (path: string) => boolean;
   /** Live file events (see events.ts). Subscriptions die with the app. */
   events: {
     subscribe(kinds: readonly EventKind[], folder: string | null): string;
@@ -207,9 +207,9 @@ export class BridgeHost {
       },
       touch,
       lock: (path, work) => services.locks.run(normaliseForMatch(path), work),
-      lockAll: (paths, work) => {
+      lockAll: <T>(paths: readonly string[], work: () => Promise<T>): Promise<T> => {
         const keys = [...new Set(paths.map(normaliseForMatch))].sort();
-        const next = (i: number): Promise<never> | Promise<any> => (i === keys.length ? work() : services.locks.run(keys[i] as string, () => next(i + 1)));
+        const next = (i: number): Promise<T> => (i === keys.length ? work() : services.locks.run(keys[i], () => next(i + 1)));
         return next(0);
       },
       confirm: async (request) => {

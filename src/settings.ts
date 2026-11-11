@@ -114,7 +114,7 @@ export class PlaygroundSettingTab extends PluginSettingTab {
           }),
       );
 
-    containerEl.createEl("h3", { text: "Snapshots and log" });
+    new Setting(containerEl).setName("Snapshots and log").setHeading();
     containerEl.createEl("p", {
       text: "Before an app edits a note, a copy is kept on this device only (not synced). These limits control how much is kept.",
       cls: "setting-item-description",
@@ -142,7 +142,7 @@ export class PlaygroundSettingTab extends PluginSettingTab {
       .addButton((b) => b.setButtonText("View snapshots").onClick(() => new SnapshotsModal(this.app, this.plugin).open()))
       .addButton((b) => b.setButtonText("Open bridge log").onClick(() => void this.plugin.openLog()));
 
-    containerEl.createEl("h3", { text: "Trusted apps" });
+    new Setting(containerEl).setName("Trusted apps").setHeading();
     containerEl.createEl("p", {
       text: "Apps you approved to run as trusted on this device. The approval is not synced and is asked for again if an app's permissions or scopes change.",
       cls: "setting-item-description",

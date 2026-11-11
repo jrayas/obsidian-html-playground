@@ -88,3 +88,8 @@
 
 /* Excluded paths: the built-in rows are read-only */
 .hp-locked { opacity: 0.75; }
+
+/* The app fills the whole tab: no padding around it. */
+.view-content.hp-view {
+  padding: 0;
+}

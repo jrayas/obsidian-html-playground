@@ -113,7 +113,7 @@ describe("rewriteCss", () => {
 
   it("replaces url() and inlines @import, surviving cycles", async () => {
     const warnings: string[] = [];
-    const out = await rewriteCss(files["a.css"] as string, hooks, (m) => warnings.push(m), new Set(["a.css"]));
+    const out = await rewriteCss(files["a.css"], hooks, (m) => warnings.push(m), new Set(["a.css"]));
     expect(out).toContain('url("data:x/imgpng")');
     expect(out).toContain('url("data:x/fwoff2")');
     expect(out).not.toContain("@import");

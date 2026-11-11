@@ -60,7 +60,7 @@ function writerHost(
   const call = async (op: string, args: Record<string, unknown> = {}) => {
     const before = sent.length;
     await host.handle({ v: 1, id: `w${++n}`, type: "request", op, args });
-    return sent[before] as BridgeResponse;
+    return sent[before];
   };
   const logs = async () => (await services.logStore.recent(100)).reverse();
   return { call, vault, services, logs, sent };
@@ -151,7 +151,7 @@ describe("SnapshotService", () => {
     const svc = new SnapshotService(store, () => ({ perFile: 3, maxBytes: 1000, maxAgeMs: 10_000 }), () => ++t, () => `s${++n}`);
     for (let i = 0; i < 5; i++) await svc.take({ path: "a.md", content: `v${i}`, app: "x", op: "files.edit" });
     expect((await svc.list("a.md")).map((m) => m.size)).toHaveLength(3);
-    expect(await svc.content((await svc.list("a.md"))[0]!.id)).toBe("v4");
+    expect(await svc.content((await svc.list("a.md"))[0].id)).toBe("v4");
     t += 20_000; // everything is now too old
     await svc.take({ path: "b.md", content: "new", app: "x", op: "o" });
     expect((await svc.list()).map((m) => m.path)).toEqual(["b.md"]);
@@ -271,7 +271,7 @@ describe("files.edit", () => {
     expect(h.vault.state()["Sandbox/note.md"]).toBe("replaced");
     const snaps = await h.services.snapshots.list("Sandbox/note.md");
     expect(snaps).toHaveLength(1);
-    expect(await h.services.snapshots.content(snaps[0]!.id)).toBe(VAULT["Sandbox/note.md"]);
+    expect(await h.services.snapshots.content(snaps[0].id)).toBe(VAULT["Sandbox/note.md"]);
     expect(snaps[0]).toMatchObject({ app: "Apps/T", op: "files.edit" });
     expect((await h.logs()).at(-1)).toMatchObject({ op: "files.edit", ok: true });
   });
@@ -286,7 +286,7 @@ describe("files.edit", () => {
   it("applies several appends at once without losing any", async () => {
     const h = writerHost();
     await Promise.all(Array.from({ length: 10 }, (_, i) => h.call("files.edit", { path: "Sandbox/note.md", content: `|${i}`, mode: "append" })));
-    const text = h.vault.state()["Sandbox/note.md"] as string;
+    const text = h.vault.state()["Sandbox/note.md"];
     for (let i = 0; i < 10; i++) expect(text).toContain(`|${i}`);
   });
 
@@ -378,11 +378,11 @@ describe("frontmatter.update", () => {
     const h = writerHost();
     const r = await h.call("frontmatter.update", { path: "Sandbox/note.md", set: { formula: "y", unit: "W", nested: { a: [1, 2] } }, remove: ["old"] });
     expect(r.result).toEqual({ updated: ["formula", "unit", "nested"], removed: ["old"] });
-    const text = h.vault.state()["Sandbox/note.md"] as string;
+    const text = h.vault.state()["Sandbox/note.md"];
     expect(text.endsWith("---\n# Title\n\nBody line\n")).toBe(true);
     expect(text).toContain('"unit":"W"');
     const snaps = await h.services.snapshots.list("Sandbox/note.md");
-    expect(await h.services.snapshots.content(snaps[0]!.id)).toBe(VAULT["Sandbox/note.md"]);
+    expect(await h.services.snapshots.content(snaps[0].id)).toBe(VAULT["Sandbox/note.md"]);
     expect((await h.logs()).at(-1)).toMatchObject({ op: "frontmatter.update", ok: true });
   });
 
@@ -501,7 +501,7 @@ describe("restoreSnapshot (a user action)", () => {
   it("puts the old text back and snapshots the current text first, so the restore can be undone", async () => {
     const h = writerHost();
     await h.call("files.edit", { path: "Sandbox/note.md", content: "edited" });
-    const original = (await h.services.snapshots.list("Sandbox/note.md"))[0]!;
+    const original = (await h.services.snapshots.list("Sandbox/note.md"))[0];
     const r = await restoreSnapshot(original.id, deps(h));
     expect(r).toEqual({ path: "Sandbox/note.md", recreated: false });
     expect(h.vault.state()["Sandbox/note.md"]).toBe(VAULT["Sandbox/note.md"]);
@@ -516,7 +516,7 @@ describe("restoreSnapshot (a user action)", () => {
     const h = writerHost();
     await h.call("files.edit", { path: "Sandbox/note.md", content: "edited" });
     h.vault.remove("Sandbox/note.md");
-    const id = (await h.services.snapshots.list("Sandbox/note.md"))[0]!.id;
+    const id = (await h.services.snapshots.list("Sandbox/note.md"))[0].id;
     expect(await restoreSnapshot(id, deps(h))).toEqual({ path: "Sandbox/note.md", recreated: true });
     expect(h.vault.state()["Sandbox/note.md"]).toBe(VAULT["Sandbox/note.md"]);
   });
@@ -525,7 +525,7 @@ describe("restoreSnapshot (a user action)", () => {
     const h = writerHost();
     await expect(restoreSnapshot("nope", deps(h))).rejects.toMatchObject({ code: "NOT_FOUND" });
     await h.call("files.edit", { path: "Sandbox/note.md", content: "edited" });
-    const id = (await h.services.snapshots.list("Sandbox/note.md"))[0]!.id;
+    const id = (await h.services.snapshots.list("Sandbox/note.md"))[0].id;
     await expect(restoreSnapshot(id, deps(h, ["Sandbox/"]))).rejects.toMatchObject({ code: "NOT_FOUND" });
     expect(h.vault.state()["Sandbox/note.md"]).toBe("edited");
   });

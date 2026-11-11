@@ -75,7 +75,7 @@ export class MemoryLogStore implements LogStore {
   }
   async update(seq: number, patch: Partial<LogEntry>): Promise<void> {
     const i = this.entries.findIndex((e) => e.seq === seq);
-    if (i >= 0) this.entries[i] = { ...(this.entries[i] as LogEntry), ...patch };
+    if (i >= 0) this.entries[i] = { ...(this.entries[i]), ...patch };
   }
   async recent(limit: number): Promise<LogEntry[]> {
     return this.entries.slice(-limit).reverse();

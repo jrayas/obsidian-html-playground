@@ -77,7 +77,7 @@ export function parseManifest(raw: string): ManifestResult {
   const entry = typeof data.entry === "string" && data.entry.trim() !== "" ? data.entry.trim() : "index.html";
   const booleanField = (key: string): boolean => {
     if (data[key] === undefined) return false;
-    if (typeof data[key] === "boolean") return data[key] as boolean;
+    if (typeof data[key] === "boolean") return data[key];
     warnings.push(`"${key}" must be true or false; treated as false.`);
     return false;
   };

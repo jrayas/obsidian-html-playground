@@ -26,6 +26,7 @@ export type ResolveResult =
 const MAX_LENGTH = 1024;
 const MAX_DECODE_PASSES = 5;
 /** Characters Obsidian forbids in names, plus control characters. ":" also blocks URL schemes and drive letters. */
+// eslint-disable-next-line no-control-regex -- control characters are the point: names containing them are refused
 const FORBIDDEN = /[<>:"|?*\u0000-\u001f\u007f]/;
 
 const invalid = (reason: string): ResolveResult => ({ ok: false, code: "INVALID", reason });

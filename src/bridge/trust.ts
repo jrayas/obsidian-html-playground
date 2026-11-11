@@ -54,7 +54,8 @@ export class TrustStore {
 }
 
 /** Device-local storage (localStorage). Never throws: a failure just means "not trusted". */
-export function localStorageBackend(key: string, storage: Pick<Storage, "getItem" | "setItem"> | undefined = globalThis.localStorage): TrustBackend {
+// `typeof` is safe where there is no localStorage at all (unit tests run in Node).
+export function localStorageBackend(key: string, storage: Pick<Storage, "getItem" | "setItem"> | undefined = typeof localStorage === "undefined" ? undefined : localStorage): TrustBackend {
   return {
     read() {
       try {

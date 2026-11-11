@@ -97,14 +97,14 @@ export function writeOps(): Record<string, Handler> {
       if (remove !== undefined && !(Array.isArray(remove) && remove.length <= 100 && remove.every((k) => typeof k === "string"))) {
         throw new BridgeError("INVALID", "Bad argument: remove.");
       }
-      const toSet = (set ?? {}) as Record<string, unknown>;
-      const toRemove = (remove ?? []) as string[];
+      const toSet = (set ?? {});
+      const toRemove = (remove ?? []);
       if (Object.keys(toSet).length === 0 && toRemove.length === 0) throw new BridgeError("INVALID", "Nothing to update.");
 
       const keys = [...Object.keys(toSet), ...toRemove];
       for (const key of keys) {
         if (key.length === 0 || key.length > 100 || FORBIDDEN_KEYS.has(key)) throw new BridgeError("INVALID", "Bad key.");
-        // eslint-disable-next-line no-control-regex
+        // eslint-disable-next-line no-control-regex -- control characters are the point: names containing them are refused
         if (/[\u0000-\u001f]/.test(key)) throw new BridgeError("INVALID", "Bad key.");
       }
       assertSafeValue(toSet);

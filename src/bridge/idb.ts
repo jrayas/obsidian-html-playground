@@ -5,17 +5,20 @@
  */
 import type { LogEntry, LogStore, SnapshotMeta, SnapshotStore } from "./store";
 
+/** IndexedDB reports failures as DOMException or null; reject with a real Error either way. */
+const asError = (e: unknown): Error => (e instanceof Error ? e : new Error("IndexedDB request failed."));
+
 const wrap = <T>(request: IDBRequest<T>): Promise<T> =>
   new Promise((resolve, reject) => {
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+    request.onerror = () => reject(asError(request.error));
   });
 
 const finished = (tx: IDBTransaction): Promise<void> =>
   new Promise((resolve, reject) => {
     tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-    tx.onabort = () => reject(tx.error);
+    tx.onerror = () => reject(asError(tx.error));
+    tx.onabort = () => reject(asError(tx.error));
   });
 
 export function openDatabase(name: string): Promise<IDBDatabase> {
@@ -28,7 +31,7 @@ export function openDatabase(name: string): Promise<IDBDatabase> {
       db.createObjectStore("log", { keyPath: "seq", autoIncrement: true });
     };
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+    request.onerror = () => reject(asError(request.error));
   });
 }
 
@@ -93,7 +96,7 @@ export class IdbLogStore implements LogStore {
           resolve(out);
         }
       };
-      request.onerror = () => reject(request.error);
+      request.onerror = () => reject(asError(request.error));
     });
   }
 
@@ -117,8 +120,8 @@ export class IdbLogStore implements LogStore {
         }
       };
       tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-      tx.onabort = () => reject(tx.error);
+      tx.onerror = () => reject(asError(tx.error));
+      tx.onabort = () => reject(asError(tx.error));
     });
   }
 

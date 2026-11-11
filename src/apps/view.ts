@@ -45,7 +45,6 @@ export class AppView extends ItemView {
   async onOpen(): Promise<void> {
     this.contentEl.empty();
     this.contentEl.addClass("hp-view");
-    this.contentEl.style.padding = "0";
     this.ensureRunner();
   }
 

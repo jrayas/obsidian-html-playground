@@ -60,7 +60,7 @@ function host(
   const call = async (op: string, args: Record<string, unknown> = {}) => {
     const before = sent.length;
     await h.handle({ v: 1, id: `d${++n}`, type: "request", op, args });
-    return sent[before] as BridgeResponse;
+    return sent[before];
   };
   const logs = async () => (await services.logStore.recent(100)).reverse();
   return { call, vault, services, logs, sent };
@@ -147,7 +147,7 @@ describe("files.rename and files.move", () => {
   it("an old link can be restored from its snapshot", async () => {
     const h = host();
     await h.call("files.rename", { from: "Sandbox/Move Me.md", to: "Sandbox/Moved Note.md" });
-    const linker = (await h.services.snapshots.list("Notes/Linker.md"))[0]!;
+    const linker = (await h.services.snapshots.list("Notes/Linker.md"))[0];
     await restoreSnapshot(linker.id, {
       gateway: h.vault.gateway, snapshots: h.services.snapshots, audit: h.services.audit, exclusions: ["Private/"], maxReadBytes: 1e6,
     });
@@ -259,7 +259,7 @@ describe("bulk operations ask the user", () => {
     expect(h.vault.state()).toEqual(before);
     expect(h.services.confirmations).toHaveLength(1);
     expect(h.services.confirmations[0]).toMatchObject({ app: "Apps/T", title: "Move a folder" });
-    expect(h.services.confirmations[0]!.paths).toHaveLength(12);
+    expect(h.services.confirmations[0].paths).toHaveLength(12);
     expect(await h.services.snapshots.list()).toEqual([]); // nothing snapshotted before approval
 
     h.services.answer(true);
@@ -272,7 +272,7 @@ describe("bulk operations ask the user", () => {
     const h = host(linkers);
     h.services.answer(false);
     expect(code(await h.call("files.move", { from: "Sandbox/Move Me.md", to: "Sandbox/Elsewhere.md" }))).toBe("DENIED");
-    expect(h.services.confirmations[0]!.details.join(" ")).toContain("14 other note(s)"); // 12 + Notes/Linker + Private/Links
+    expect(h.services.confirmations[0].details.join(" ")).toContain("14 other note(s)"); // 12 + Notes/Linker + Private/Links
   });
 
   it("refuses past the hard cap without asking; trusted apps have a higher cap but are still asked", async () => {
@@ -334,7 +334,7 @@ describe("files.delete", () => {
     expect(r.result).toEqual({ trashed: true });
     expect(h.vault.state()["Sandbox/a.md"]).toBeUndefined();
     expect(h.vault.trashed).toEqual([{ path: "Sandbox/a.md", system: false }]); // trashOption "local"
-    const snap = (await h.services.snapshots.list("Sandbox/a.md"))[0]!;
+    const snap = (await h.services.snapshots.list("Sandbox/a.md"))[0];
     expect(await h.services.snapshots.content(snap.id)).toBe("a");
     expect((await h.logs()).at(-1)).toMatchObject({ op: "files.delete", ok: true, paths: ["Sandbox/a.md"] });
     expect(h.services.confirmations).toEqual([]); // a single file does not ask
@@ -352,7 +352,7 @@ describe("files.delete", () => {
   it("can be undone: restoring the snapshot recreates the note", async () => {
     const h = host();
     await h.call("files.delete", { path: "Sandbox/a.md" });
-    const snap = (await h.services.snapshots.list("Sandbox/a.md"))[0]!;
+    const snap = (await h.services.snapshots.list("Sandbox/a.md"))[0];
     const r = await restoreSnapshot(snap.id, {
       gateway: h.vault.gateway, snapshots: h.services.snapshots, audit: h.services.audit, exclusions: ["Private/"], maxReadBytes: 1e6,
     });
