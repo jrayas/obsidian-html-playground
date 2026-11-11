@@ -1,6 +1,6 @@
 {
   "name": "html-playground",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Host live HTML/CSS/JS apps from your vault in a sandbox, with a validated bridge to your notes.",
   "author": "Anthirayas",
   "license": "MIT",
