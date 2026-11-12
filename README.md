@@ -84,7 +84,7 @@ Reference: [bridge API](docs/bridge-api.md), [path rule](docs/path-rule.md), [sa
 | --- | --- |
 | Apps folder | Where **Open app** looks for `manifest.json` files |
 | Strict paths | Turns off the `./` shortcut for an app's own files |
-| Excluded paths | What apps can never see. Built-in defaults (`.obsidian`, `.git`, `.trash`, any hidden folder or file) cannot be removed. Add your own folders, files or patterns |
+| Excluded paths | What apps can never see. Built-in defaults (`.obsidian`, `.git`, `.trash`, any hidden folder or file, and your vault's configuration folder even if you renamed it) cannot be removed. Add your own folders, files or patterns |
 | Allowed network domains | Global allow-list. A domain must also be in the app's manifest. **Empty by default** |
 | Asset mode | Auto, blob URLs or inline data |
 | Snapshots per file, size cap, age limit | How much is kept (defaults 20, 50 MB, 30 days) |

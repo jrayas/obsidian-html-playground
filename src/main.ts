@@ -17,6 +17,7 @@ import { SnapshotsModal } from "./views/snapshots";
 import type { RawEvent } from "./bridge/events";
 import { localStorageBackend, TrustManager, TrustStore } from "./bridge/trust";
 import { registerEmbed } from "./apps/embed";
+import { withConfigDir } from "./paths/exclusions";
 import { AppPickerModal, findManifests, openApp } from "./apps/picker";
 import type { AppRunner } from "./apps/runner";
 import { AppView, VIEW_TYPE_APP } from "./apps/view";
@@ -80,7 +81,7 @@ export default class HtmlPlaygroundPlugin extends Plugin {
       id: "open-app",
       name: "Open app",
       callback: () => {
-        const manifests = findManifests(this.app, this.settings.appsFolder, this.settings.exclusions);
+        const manifests = findManifests(this.app, this.settings.appsFolder, this.exclusionList());
         if (manifests.length === 0) {
           new Notice(`No apps found in "${this.settings.appsFolder}". Each app needs a manifest.json.`);
           return;
@@ -144,6 +145,15 @@ export default class HtmlPlaygroundPlugin extends Plugin {
     this.db?.close();
   }
 
+  /**
+   * What apps may never see: the user's patterns, the vault's configuration folder (even if it was renamed to
+   * something that is not hidden), and, inside the matcher, every hidden folder. Use this, never `settings.exclusions`
+   * on its own, wherever a path is checked.
+   */
+  exclusionList(): string[] {
+    return withConfigDir(this.settings.exclusions, this.app.vault.configDir);
+  }
+
   async openLog(): Promise<void> {
     const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_LOG)[0];
     const leaf = existing ?? this.app.workspace.getLeaf("tab");
@@ -157,7 +167,7 @@ export default class HtmlPlaygroundPlugin extends Plugin {
       gateway: this.gateway,
       snapshots: this.snapshots,
       audit: this.audit,
-      exclusions: this.settings.exclusions,
+      exclusions: this.exclusionList(),
       maxReadBytes: 5 * 1024 * 1024,
     });
   }

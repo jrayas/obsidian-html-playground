@@ -179,8 +179,10 @@ export class PlaygroundSettingTab extends PluginSettingTab {
       cls: "setting-item-description",
     });
 
-    // Always on, shown so it is clear what is protected by default.
-    for (const name of BUILT_IN_EXCLUSIONS) {
+    // Always on, shown so it is clear what is protected by default. The config folder is listed too if it was renamed.
+    const configDir = this.app.vault.configDir;
+    const builtIn = BUILT_IN_EXCLUSIONS.includes(configDir) || configDir.startsWith(".") ? BUILT_IN_EXCLUSIONS : [...BUILT_IN_EXCLUSIONS, `${configDir} (this vault's configuration folder)`];
+    for (const name of builtIn) {
       const row = new Setting(containerEl).setName(name).setDesc("Built in. Always hidden from apps and cannot be removed.");
       row.settingEl.addClass("hp-locked");
       row.addExtraButton((b) => b.setIcon("lock").setTooltip("Always on").setDisabled(true));

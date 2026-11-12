@@ -95,7 +95,7 @@ export class AppRunner {
     this.root.empty();
 
     const s = this.plugin.settings;
-    const resolved = resolvePath(manifestPath, { allowRelativeFallback: false, exclusions: s.exclusions });
+    const resolved = resolvePath(manifestPath, { allowRelativeFallback: false, exclusions: this.plugin.exclusionList() });
     if (!resolved.ok) return this.showError("App not found.");
 
     const io = this.io();
@@ -116,7 +116,7 @@ export class AppRunner {
         theme: readTheme(),
         nonce: this.nonce,
         strictPaths: s.strictPaths,
-        exclusions: s.exclusions,
+        exclusions: this.plugin.exclusionList(),
         globalDomains: s.allowedDomains,
         assetMode: effectiveAssetMode(s.assetMode),
       });
@@ -131,7 +131,7 @@ export class AppRunner {
       appRoot,
       manifest: parsed.manifest,
       strictPaths: s.strictPaths,
-      exclusions: s.exclusions,
+      exclusions: this.plugin.exclusionList(),
       trusted,
       ...(this.options.embed ? { embed: this.options.embed } : {}),
     });

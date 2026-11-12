@@ -13,7 +13,7 @@ Apps are untrusted (they may be AI-written or buggy). The host enforces every ru
 | iframe `sandbox="allow-scripts"` only | 1 | Never `allow-same-origin` |
 | CSP blocks all network by default | 1 | Domains need manifest `allowedDomains` AND global allow-list |
 | Single path resolver | 1 | See [path-rule.md](path-rule.md) |
-| Exclusion list (hidden folders, `.obsidian`, `.git`, `.trash`, user globs) | 1 | Generic not-found; omitted from list and search |
+| Exclusion list (hidden folders, `.obsidian`, `.git`, `.trash`, the vault's configuration folder even if renamed to something not hidden, user globs) | 1 | Generic not-found; omitted from list and search |
 | Message validation, rate and size limits | 2 (done: 2a, 2b) | Source window and nonce checked; private port |
 | Per-app permissions | 2 (done: 2a, 2b) | Undeclared returns `DENIED`; denied write attempts are logged |
 | Delete to trash | 2 (done: 2c) | `vault.trash` only; never `vault.delete`; "permanent" overridden to system trash |

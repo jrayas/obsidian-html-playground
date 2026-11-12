@@ -19,6 +19,22 @@ export const BUILT_IN_EXCLUSIONS: readonly string[] = [".obsidian", ".git", ".tr
 
 const MAX_PATTERN_LENGTH = 200;
 
+/**
+ * The pattern that hides the vault's configuration folder, whatever the user called it (Obsidian lets the
+ * folder be renamed; the hidden-folder floor only covers names that start with a dot). It is anchored at the
+ * vault root, so "Notes/config" is not affected. Null when the name is empty. The result only ever hides more.
+ */
+export function configDirPattern(configDir: string | undefined): string | null {
+  const name = (configDir ?? "").trim().replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
+  return name === "" ? null : `/${name}/`;
+}
+
+/** The user's patterns plus the configuration folder. This is the list every part of the plugin must use. */
+export function withConfigDir(userPatterns: readonly string[], configDir: string | undefined): string[] {
+  const extra = configDirPattern(configDir);
+  return extra === null ? [...userPatterns] : [...userPatterns, extra];
+}
+
 interface CompiledPattern {
   anchored: boolean;
   regex: RegExp;
