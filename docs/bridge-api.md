@@ -145,7 +145,7 @@ Same checks as writes, plus the rules below.
 | --- | --- | --- | --- |
 | `files.rename` | `from`, `to` | `{ path }` | `to` must be in the same folder as `from` |
 | `files.move` | `from`, `to` | `{ path }` | May change folder; creates missing parents |
-| `files.delete` | `path` | `{ trashed: true }` | Always to a trash, never permanent. A snapshot is taken first |
+| `files.delete` | `path` | `{ trashed, deleted: true }` | Follows Obsidian's "Deleted files" setting. `trashed` is false if the setting erased the file. If the setting is permanent the user is asked first (always, even for trusted apps; `DENIED` if refused). A snapshot of each note is taken first |
 
 Details every app author should know:
 
@@ -191,7 +191,7 @@ bridge.on("file", (e) => { /* e = { id, kind, type, path, oldPath? } */ });
 
 Trusted lets an app: write anywhere in the vault (not only inside `writeScopes`), use 5 times the request rate, write files up to 25 MB, and change up to 200 files in one operation (the user is still asked above 10).
 
-Trusted never lets an app: touch excluded or hidden paths, write to an app folder or any `manifest.json`, skip snapshots or the log, delete permanently, or reach the network.
+Trusted never lets an app: touch excluded or hidden paths, write to an app folder or any `manifest.json`, skip snapshots or the log, skip the permanent-delete pop-up, or reach the network.
 
 ## Fetch shim
 

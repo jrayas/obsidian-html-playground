@@ -15,7 +15,7 @@ import { LogView, VIEW_TYPE_LOG } from "./views/log";
 import { createPicker } from "./views/pick";
 import { SnapshotsModal } from "./views/snapshots";
 import type { RawEvent } from "./bridge/events";
-import { localStorageBackend, TrustManager, TrustStore } from "./bridge/trust";
+import { appLocalStorage, localStorageBackend, TrustManager, TrustStore } from "./bridge/trust";
 import { registerEmbed } from "./apps/embed";
 import { withConfigDir } from "./paths/exclusions";
 import { AppPickerModal, findManifests, openApp } from "./apps/picker";
@@ -37,6 +37,8 @@ export default class HtmlPlaygroundPlugin extends Plugin {
   services!: BridgeServices;
   /** The user's approvals of trusted apps. Device-local (localStorage), never synced. */
   trust!: TrustManager;
+  /** The settings screen, so changes made elsewhere (an approval) can refresh it. */
+  settingTab: PlaygroundSettingTab | undefined;
   private db: IDBDatabase | null = null;
 
   async onload(): Promise<void> {
@@ -66,8 +68,10 @@ export default class HtmlPlaygroundPlugin extends Plugin {
       confirm: createConfirmer(this.app),
       pick: createPicker(this.app),
     };
+    const approvals = localStorageBackend("html-playground:trust", appLocalStorage(this.app));
     this.trust = new TrustManager(
-      new TrustStore(localStorageBackend(`html-playground:trust:${this.app.vault.getName()}`)),
+      // Whenever an approval changes, tell the settings screen: Obsidian keeps the definitions it was last given.
+      new TrustStore({ read: () => approvals.read(), write: (value) => { approvals.write(value); this.settingTab?.update(); } }),
       (request) => this.services.confirm(request),
     );
     this.handlers = buildHandlers({ yaml: { parseYaml, stringifyYaml }, getTheme: readTheme });
@@ -75,7 +79,8 @@ export default class HtmlPlaygroundPlugin extends Plugin {
     this.registerView(VIEW_TYPE_APP, (leaf) => new AppView(leaf, this));
     this.registerView(VIEW_TYPE_LOG, (leaf) => new LogView(leaf, this));
     registerEmbed(this);
-    this.addSettingTab(new PlaygroundSettingTab(this.app, this));
+    this.settingTab = new PlaygroundSettingTab(this.app, this);
+    this.addSettingTab(this.settingTab);
 
     this.addCommand({
       id: "open-app",

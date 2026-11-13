@@ -16,7 +16,7 @@ Apps are untrusted (they may be AI-written or buggy). The host enforces every ru
 | Exclusion list (hidden folders, `.obsidian`, `.git`, `.trash`, the vault's configuration folder even if renamed to something not hidden, user globs) | 1 | Generic not-found; omitted from list and search |
 | Message validation, rate and size limits | 2 (done: 2a, 2b) | Source window and nonce checked; private port |
 | Per-app permissions | 2 (done: 2a, 2b) | Undeclared returns `DENIED`; denied write attempts are logged |
-| Delete to trash | 2 (done: 2c) | `vault.trash` only; never `vault.delete`; "permanent" overridden to system trash |
+| Delete follows the user's setting | 2 (done: 2c) | `FileManager.trashFile` only; never `vault.delete`. If the setting is permanent, a pop-up asks first (even for trusted apps) and a snapshot is kept |
 | Bulk and folder confirmation | 2 (done: 2c) | Host dialog; deny by default; 60 s timeout |
 | Snapshots and restore | 2 (done: 2b; restore UI in 2d) | Device-local IndexedDB; 20 per file, 50 MB, 30 days; fail closed |
 | Write log | 2 (done: 2b; view in 2d) | App, action, path, time, result; written before the work; fail closed |
@@ -34,14 +34,14 @@ Apps are untrusted (they may be AI-written or buggy). The host enforces every ru
 
 ## Destructive operations (step 2c)
 
-- Deletes only ever go to a trash. The plugin never calls a permanent delete, whatever Obsidian's "Deleted files" setting says.
+- A delete follows Obsidian's "Deleted files" setting. If that setting erases permanently, the app's delete asks you first, says how many files cannot be copied, and keeps a copy of each note in Snapshots. The plugin never calls `vault.delete`.
 - Folder operations list the real directory first and refuse anything excluded, hidden or an app inside. Hidden folders such as `.git` cannot travel with a moved or deleted folder.
 - Notes whose links Obsidian will rewrite are snapshotted first, including excluded ones. Case-insensitive name collisions are detected, so nothing is silently overwritten on macOS or Windows.
 - Folder deletes and bulk moves need the user's approval in a dialog the app cannot reach.
 
 ## `trusted` flag: what it unlocks (active)
 
-Only: writing outside `writeScopes` (vault-wide), 5x request rates, a 25 MB write size, and larger bulk operations. It never unlocks: exclusions, trash-only delete, snapshots, logging, the apps-folder and manifest write block, network access or the sandbox. Approval is stored on this device only (never synced) and tied to a hash of the manifest's permissions, scopes, domains, entry file and flag, so any change to them asks again. It is listed in Settings with a Revoke button.
+Only: writing outside `writeScopes` (vault-wide), 5x request rates, a 25 MB write size, and larger bulk operations. It never unlocks: exclusions, the permanent-delete pop-up, snapshots, logging, the apps-folder and manifest write block, network access or the sandbox. Approval is stored on this device only (never synced) and tied to a hash of the manifest's permissions, scopes, domains, entry file and flag, so any change to them asks again. It is listed in Settings with a Revoke button.
 
 ## Known limitations
 

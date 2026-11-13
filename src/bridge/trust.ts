@@ -4,6 +4,7 @@
  * is tied to a hash of the parts of the manifest that matter, so changing permissions, scopes, domains,
  * entry file or the flag itself asks again.
  */
+import type { App } from "obsidian";
 import type { AppManifest } from "../apps/manifest";
 import type { ConfirmRequest } from "./services";
 
@@ -53,14 +54,33 @@ export class TrustStore {
   }
 }
 
-/** Device-local storage (localStorage). Never throws: a failure just means "not trusted". */
-// `typeof` is safe where there is no localStorage at all (unit tests run in Node).
-export function localStorageBackend(key: string, storage: Pick<Storage, "getItem" | "setItem"> | undefined = typeof localStorage === "undefined" ? undefined : localStorage): TrustBackend {
+/**
+ * Obsidian's own vault-scoped local storage (App#loadLocalStorage and #saveLocalStorage, Obsidian 1.8.7). It is
+ * device-local and never synced, and Obsidian keeps one copy per vault. A string goes in and a string comes out.
+ */
+export function appLocalStorage(app: Pick<App, "loadLocalStorage" | "saveLocalStorage">): Pick<Storage, "getItem" | "setItem"> {
+  return {
+    getItem: (key) => {
+      const value: unknown = app.loadLocalStorage(key);
+      return typeof value === "string" ? value : null;
+    },
+    setItem: (key, value) => app.saveLocalStorage(key, value),
+  };
+}
+
+/** Reads and writes the approvals through a Storage-like object. Never throws: a failure just means "not trusted". */
+export function localStorageBackend(key: string, storage: Pick<Storage, "getItem" | "setItem"> | undefined): TrustBackend {
   return {
     read() {
       try {
         const parsed = JSON.parse(storage?.getItem(key) ?? "{}") as unknown;
-        return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed) ? (parsed as Record<string, TrustRecord>) : {};
+        if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return {};
+        // Keep only well-formed entries, and never the key "__proto__" (JSON.parse makes it an ordinary own property).
+        const clean: Record<string, TrustRecord> = {};
+        for (const [name, value] of Object.entries(parsed)) {
+          if (name !== "__proto__" && typeof value === "object" && value !== null && !Array.isArray(value)) clean[name] = value as TrustRecord;
+        }
+        return clean;
       } catch {
         return {};
       }

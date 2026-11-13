@@ -17,12 +17,19 @@ import {
   classifyRef,
   escapeInlineScript,
   escapeInlineStyle,
+  fillMarkers,
   hasRelativeModuleImport,
+  inlineStyleTag,
   isFont,
   mimeFor,
 } from "./refs";
 
-const BOOTSTRAP_MARKER = "hp-bootstrap-marker";
+/** A random value for one load. Not a secret from the host: it only has to be unguessable by the app's own text. */
+function randomToken(): string {
+  const bytes = new Uint8Array(12);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
 
 export interface LoaderIO {
   readText(path: string): Promise<string | null>;
@@ -135,6 +142,10 @@ export async function loadApp(options: LoadOptions): Promise<LoadedApp> {
   if (source === null) throw new Error("The entry file could not be found.");
 
   const doc = new DOMParser().parseFromString(source, "text/html");
+  // Styles and the plugin's own header are written into the page as TEXT at marker comments (see fillMarkers),
+  // not built as elements. The token is random for each load, so no app or note can forge a marker.
+  const token = randomToken();
+  const fragments: string[] = [];
 
   // 2. Remove things that could navigate away or change the base URL.
   doc.querySelectorAll("base, meta[http-equiv]").forEach((el) => el.remove());
@@ -153,11 +164,10 @@ export async function loadApp(options: LoadOptions): Promise<LoadedApp> {
         link.remove();
         continue;
       }
-      const style = doc.createElement("style");
-      style.textContent = escapeInlineStyle(await rewriteCss(text, cssHooks, (m) => warnings.push(m), new Set([path!])));
+      const css = await rewriteCss(text, cssHooks, (m) => warnings.push(m), new Set([path!]));
       const media = link.getAttribute("media");
-      if (media) style.setAttribute("media", media);
-      link.replaceWith(style);
+      fragments.push(inlineStyleTag(css, media ? { media } : {}));
+      link.replaceWith(doc.createComment(`hp-${token}-${fragments.length - 1}`));
     } else if (rel.includes("icon")) {
       const url = await assetUrl(href);
       if (url) link.setAttribute("href", url);
@@ -232,21 +242,18 @@ export async function loadApp(options: LoadOptions): Promise<LoadedApp> {
   }
 
   // 7. Inject the security header at the very top of <head>, CSP first.
-  const csp = doc.createElement("meta");
-  csp.setAttribute("http-equiv", "Content-Security-Policy");
-  csp.setAttribute(
-    "content",
-    buildCsp(effectiveDomains(manifest.allowedDomains, options.globalDomains)),
-  );
-  const theme = doc.createElement("style");
-  theme.setAttribute("data-hp", "theme");
-  theme.textContent = themeToCss(options.theme);
-  // The bootstrap is the plugin's own fixed code (src/bootstrap/script.ts), never anything from the app or the note.
-  // It is written into the page text at a marker that sits right after the CSP and theme, so it runs first. The
-  // marker is the first comment in <head>, so a comment an app might contain cannot take its place.
-  doc.head.prepend(csp, theme, doc.createComment(BOOTSTRAP_MARKER));
-  const bootstrapTag = `<script>${escapeInlineScript(buildBootstrap(options.nonce))}</script>`;
-  const page = doc.documentElement.outerHTML.replace(`<!--${BOOTSTRAP_MARKER}-->`, () => bootstrapTag);
+  const csp = createEl("meta", {
+    attr: {
+      "http-equiv": "Content-Security-Policy",
+      content: buildCsp(effectiveDomains(manifest.allowedDomains, options.globalDomains)),
+    },
+  });
+  // The theme variables and the bootstrap are the plugin's own text (src/bootstrap/script.ts), never anything from
+  // the app or the note. They go in right after the CSP, in this order, so the bridge exists before any app script.
+  const header = inlineStyleTag(themeToCss(options.theme), { "data-hp": "theme" }) + `<script>${escapeInlineScript(buildBootstrap(options.nonce))}</script>`;
+  fragments.push(header);
+  doc.head.prepend(csp, doc.createComment(`hp-${token}-${fragments.length - 1}`));
+  const page = fillMarkers(doc.documentElement.outerHTML, token, fragments);
 
   return {
     html: "<!DOCTYPE html>\n" + page,

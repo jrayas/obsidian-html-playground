@@ -9,7 +9,7 @@ import { filesReadOps } from "../src/bridge/ops/files";
 import { writeOps } from "../src/bridge/ops/writes";
 import type { BridgeResponse } from "../src/bridge/protocol";
 import { restoreSnapshot } from "../src/bridge/restore";
-import { useSystemTrash } from "../src/bridge/trash";
+import { deletesPermanently } from "../src/bridge/trash";
 import { memoryServices, mutableApp } from "./support";
 
 // ---- harness -----------------------------------------------------------------------------------
@@ -71,11 +71,10 @@ const many = (dir: string, n: number) => Object.fromEntries(Array.from({ length:
 
 // ---- pure pieces -------------------------------------------------------------------------------
 
-describe("trash policy", () => {
-  it("never allows a permanent delete", () => {
-    expect(useSystemTrash("system")).toBe(true);
-    expect(useSystemTrash("local")).toBe(false);
-    for (const odd of ["none", undefined, null, "", "permanent", 0, false, {}]) expect(useSystemTrash(odd), String(odd)).toBe(true);
+describe("deletion policy", () => {
+  it("only Obsidian's 'none' setting erases permanently; anything else, even an unknown value, ends in a trash", () => {
+    expect(deletesPermanently("none")).toBe(true);
+    for (const other of ["system", "local", undefined, null, "", "permanent", 0, false, {}]) expect(deletesPermanently(other), String(other)).toBe(false);
   });
 });
 
@@ -331,21 +330,84 @@ describe("files.delete", () => {
   it("sends a note to the trash (never a permanent delete) after snapshotting it", async () => {
     const h = host();
     const r = await h.call("files.delete", { path: "Sandbox/a.md" });
-    expect(r.result).toEqual({ trashed: true });
+    expect(r.result).toEqual({ trashed: true, deleted: true });
     expect(h.vault.state()["Sandbox/a.md"]).toBeUndefined();
-    expect(h.vault.trashed).toEqual([{ path: "Sandbox/a.md", system: false }]); // trashOption "local"
+    expect(h.vault.trashed).toEqual([{ path: "Sandbox/a.md", mode: "local" }]); // trashOption "local"
     const snap = (await h.services.snapshots.list("Sandbox/a.md"))[0];
     expect(await h.services.snapshots.content(snap.id)).toBe("a");
     expect((await h.logs()).at(-1)).toMatchObject({ op: "files.delete", ok: true, paths: ["Sandbox/a.md"] });
     expect(h.services.confirmations).toEqual([]); // a single file does not ask
   });
 
-  it("overrides 'permanent delete' and unknown settings with the system trash", async () => {
-    for (const [option, system] of [["system", true], ["none", true], [undefined, true], ["local", false]] as const) {
+  it("follows the user's 'Deleted files' setting, and asks nobody when that setting is a trash", async () => {
+    for (const [option, mode] of [["system", "system"], ["local", "local"], [undefined, "system"]] as const) {
       const h = host();
       h.vault.setConfig("trashOption", option);
-      await h.call("files.delete", { path: "Sandbox/a.md" });
-      expect(h.vault.trashed, String(option)).toEqual([{ path: "Sandbox/a.md", system }]);
+      const r = await h.call("files.delete", { path: "Sandbox/a.md" });
+      expect(r.result, String(option)).toEqual({ trashed: true, deleted: true });
+      expect(h.vault.trashed, String(option)).toEqual([{ path: "Sandbox/a.md", mode }]);
+      expect(h.services.confirmations, String(option)).toEqual([]);
+    }
+  });
+
+  it("when the setting is 'permanently delete', even one note asks first, and Deny changes nothing", async () => {
+    const h = host();
+    h.vault.setConfig("trashOption", "none");
+    h.services.answer(false);
+    const before = h.vault.state();
+    expect(code(await h.call("files.delete", { path: "Sandbox/a.md" }))).toBe("DENIED");
+    expect(h.vault.state()).toEqual(before);
+    expect(h.vault.trashed).toEqual([]);
+    expect(await h.services.snapshots.list()).toEqual([]); // refused before anything was copied or removed
+    expect(h.services.confirmations).toHaveLength(1);
+    expect(h.services.confirmations[0]).toMatchObject({ title: "Delete permanently", app: "Apps/T", paths: ["Sandbox/a.md"] });
+    expect(h.services.confirmations[0]?.details.join(" ")).toMatch(/Permanently delete/);
+    expect(h.services.confirmations[0]?.details.join(" ")).toMatch(/Snapshots/);
+  });
+
+  it("when the user allows it, the note is erased after a snapshot, and the snapshot restores it", async () => {
+    const h = host();
+    h.vault.setConfig("trashOption", "none");
+    h.services.answer(true);
+    const r = await h.call("files.delete", { path: "Sandbox/a.md" });
+    expect(r.result).toEqual({ trashed: false, deleted: true });
+    expect(h.vault.state()["Sandbox/a.md"]).toBeUndefined();
+    expect(h.vault.trashed).toEqual([{ path: "Sandbox/a.md", mode: "permanent" }]);
+    const snap = (await h.services.snapshots.list("Sandbox/a.md"))[0];
+    expect(await h.services.snapshots.content(snap.id)).toBe("a");
+    const back = await restoreSnapshot(snap.id, {
+      gateway: h.vault.gateway, snapshots: h.services.snapshots, audit: h.services.audit, exclusions: ["Private/"], maxReadBytes: 1e6,
+    });
+    expect(back).toEqual({ path: "Sandbox/a.md", recreated: true });
+    expect(h.vault.state()["Sandbox/a.md"]).toBe("a");
+  });
+
+  it("a trusted app is asked too: trust never allows a permanent delete without the user's answer", async () => {
+    const h = host({}, { trusted: true });
+    h.vault.setConfig("trashOption", "none");
+    h.services.answer(false);
+    expect(code(await h.call("files.delete", { path: "Sandbox/a.md" }))).toBe("DENIED");
+    expect(h.services.confirmations).toHaveLength(1);
+    expect(h.vault.trashed).toEqual([]);
+  });
+
+  it("a permanent folder delete shows one pop-up that says which files cannot be copied", async () => {
+    const h = host({ "Sandbox/folder/pic.png": "PNG" });
+    h.vault.setConfig("trashOption", "none");
+    h.services.answer(true);
+    expect((await h.call("files.delete", { path: "Sandbox/folder" })).ok).toBe(true);
+    expect(h.services.confirmations).toHaveLength(1); // not one for the folder and another for 'permanent'
+    expect(h.services.confirmations[0]?.title).toBe("Delete permanently");
+    expect(h.services.confirmations[0]?.details.join(" ")).toMatch(/1 of them are not notes/);
+    expect(h.vault.trashed).toEqual([{ path: "Sandbox/folder", mode: "permanent" }]);
+  });
+
+  it("never calls vault.trash or vault.delete: the fake vault throws if the bridge does", async () => {
+    for (const option of ["system", "local", "none"]) {
+      const h = host();
+      h.vault.setConfig("trashOption", option);
+      h.services.answer(true);
+      expect((await h.call("files.delete", { path: "Sandbox/a.md" })).ok, option).toBe(true);
     }
   });
 
@@ -389,7 +451,7 @@ describe("files.delete", () => {
 
     h.services.answer(true);
     expect((await h.call("files.delete", { path: "Sandbox/folder" })).ok).toBe(true);
-    expect(h.vault.trashed).toEqual([{ path: "Sandbox/folder", system: false }]);
+    expect(h.vault.trashed).toEqual([{ path: "Sandbox/folder", mode: "local" }]);
     expect((await h.services.snapshots.list()).map((s) => s.path).sort()).toEqual(["Sandbox/folder/f1.md", "Sandbox/folder/f2.md", "Sandbox/folder/f3.md"]);
   });
 

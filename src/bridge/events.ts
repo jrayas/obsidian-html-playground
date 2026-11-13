@@ -72,7 +72,7 @@ export interface RouterOptions {
 
 export class EventRouter {
   private readonly subs = new Map<string, Subscription>();
-  private readonly pending = new Map<string, ReturnType<typeof setTimeout>>();
+  private readonly pending = new Map<string, number>();
   private counter = 0;
 
   constructor(
@@ -91,7 +91,7 @@ export class EventRouter {
   unsubscribe(id: string): boolean {
     for (const [key, timer] of this.pending) {
       if (key.startsWith(id + "\0")) {
-        clearTimeout(timer);
+        window.clearTimeout(timer);
         this.pending.delete(key);
       }
     }
@@ -115,7 +115,7 @@ export class EventRouter {
   }
 
   dispose(): void {
-    for (const timer of this.pending.values()) clearTimeout(timer);
+    for (const timer of this.pending.values()) window.clearTimeout(timer);
     this.pending.clear();
     this.subs.clear();
   }
@@ -123,7 +123,7 @@ export class EventRouter {
   private cancelPending(path: string): void {
     for (const [key, timer] of this.pending) {
       if (key.endsWith("\0" + path)) {
-        clearTimeout(timer);
+        window.clearTimeout(timer);
         this.pending.delete(key);
       }
     }
@@ -135,7 +135,7 @@ export class EventRouter {
     if (this.pending.has(key)) return;
     this.pending.set(
       key,
-      setTimeout(() => {
+      window.setTimeout(() => {
         this.pending.delete(key);
         this.send(out);
       }, this.options.throttleMs),

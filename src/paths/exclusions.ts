@@ -15,7 +15,7 @@
  */
 
 /** Shown in settings so the user can see what is always excluded. */
-export const BUILT_IN_EXCLUSIONS: readonly string[] = [".obsidian", ".git", ".trash", "(any hidden folder or file)"];
+export const BUILT_IN_EXCLUSIONS: readonly string[] = [".git", ".trash", "(any hidden folder or file)"];
 
 const MAX_PATTERN_LENGTH = 200;
 

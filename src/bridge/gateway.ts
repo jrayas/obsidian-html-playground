@@ -11,7 +11,7 @@ import type { App, TFile, TFolder } from "obsidian";
 import { BridgeError } from "./errors";
 import { normaliseForMatch } from "../paths/exclusions";
 import { parentOf, type VaultPath } from "./paths";
-import { useSystemTrash } from "./trash";
+import { deletesPermanently } from "./trash";
 
 export interface ReadResult {
   content: string;
@@ -88,8 +88,7 @@ export class VaultGateway {
     if (!root) throw new BridgeError("NOT_FOUND");
     const entries: ListEntry[] = [];
     const queue: TFolder[] = [root];
-    while (queue.length > 0) {
-      const current = queue.shift() as TFolder;
+    for (let current = queue.shift(); current !== undefined; current = queue.shift()) {
       for (const child of current.children) {
         if (!visible(child.path)) continue;
         const c = child as TFile | TFolder;
@@ -299,11 +298,19 @@ export class VaultGateway {
     return created;
   }
 
-  /** Always to a trash, never a permanent delete. See trash.ts. */
-  async trashItem(path: VaultPath): Promise<void> {
+  /** True when Obsidian's "Deleted files" setting erases files instead of moving them to a trash. */
+  deletesPermanently(): boolean {
+    return deletesPermanently(this.config("trashOption"));
+  }
+
+  /**
+   * Deletes the way the user's "Deleted files" setting says. The caller has already snapshotted the notes and,
+   * when the setting is permanent, asked the user (see destructive.ts).
+   */
+  async deleteItem(path: VaultPath): Promise<void> {
     const item = this.app.vault.getAbstractFileByPath(path);
     if (!item) throw new BridgeError("NOT_FOUND");
-    await this.app.vault.trash(item, useSystemTrash(this.config("trashOption")));
+    await this.app.fileManager.trashFile(item);
   }
 
   /** Writes an app's own data.json, creating it on first use. */

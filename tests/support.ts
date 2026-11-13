@@ -66,7 +66,8 @@ export function mutableApp(initial: Record<string, string>, hiddenOnDisk: string
   const folders = new Set<string>();
   const hidden = new Set(hiddenOnDisk);
   const config: Record<string, unknown> = { alwaysUpdateLinks: true, trashOption: "local" };
-  const trashed: Array<{ path: string; system: boolean }> = [];
+  /** What fileManager.trashFile did, following the "trashOption" setting like Obsidian does. */
+  const trashed: Array<{ path: string; mode: "system" | "local" | "permanent" }> = [];
   let active: string | null = null;
   const opened: string[] = [];
   const leaves: Array<{ getViewState: () => { type: string; state: { file: string } } }> = [];
@@ -153,9 +154,8 @@ export function mutableApp(initial: Record<string, string>, hiddenOnDisk: string
       },
       modify: async (f: FakeFile, content: string) => void put(f.path, content),
       process: async (f: FakeFile, fn: (d: string) => string) => void put(f.path, fn(f.content)),
-      trash: async (item: { path: string }, system: boolean) => {
-        trashed.push({ path: item.path, system });
-        removeSubtree(item.path);
+      trash: async () => {
+        throw new Error("vault.trash must never be called by the bridge: deletes go through fileManager.trashFile");
       },
       delete: async () => {
         throw new Error("vault.delete must never be called by the bridge");
@@ -187,6 +187,11 @@ export function mutableApp(initial: Record<string, string>, hiddenOnDisk: string
       },
     },
     fileManager: {
+      trashFile: async (item: { path: string }) => {
+        const option = config.trashOption;
+        trashed.push({ path: item.path, mode: option === "none" ? "permanent" : option === "local" ? "local" : "system" });
+        removeSubtree(item.path);
+      },
       processFrontMatter: async (f: FakeFile, fn: (fm: Record<string, unknown>) => void) => {
         const fm = (f.frontmatter ??= {});
         fn(fm);

@@ -97,7 +97,7 @@ Exclusions hide things from **apps** only. They do not hide anything in Obsidian
 
 - Apps run in an iframe with `sandbox="allow-scripts"` only (never same-origin) under a Content Security Policy that blocks all network access by default.
 - An app can only send requests over a private channel the plugin sets up. Every request is checked for a declared permission, a valid path, your exclusions, the app's folder scopes and rate limits.
-- Writes always go through Obsidian's own file APIs. Before an app edits, moves or deletes a note, the plugin saves a copy. Deletes go to Obsidian's trash, never permanently. Deleting a folder, or touching more than 10 files, asks you first.
+- Writes always go through Obsidian's own file APIs. Before an app edits, moves or deletes a note, the plugin saves a copy. A delete follows Obsidian's "Deleted files" setting, and if that setting erases permanently the plugin asks you first and keeps a copy of each note in Snapshots. Deleting a folder, or touching more than 10 files, asks you first.
 - An app cannot write inside the apps folder or to any `manifest.json`, so it cannot rewrite itself.
 - Notes cannot give an app extra power. When an app is embedded, the note's parameters are plain text for the app to read, and grant nothing.
 
@@ -115,7 +115,7 @@ Details: [security.md](docs/security.md).
 
 ## Compatibility
 
-Works on desktop and mobile (`isDesktopOnly` is false). Tested on macOS desktop and an Android emulator. Needs Obsidian 1.5.7 or later.
+Works on desktop and mobile (`isDesktopOnly` is false). Tested on macOS desktop and an Android emulator. Needs Obsidian 1.13.4 or later.
 
 ## Development
 

@@ -71,6 +71,31 @@ export function escapeInlineStyle(text: string): string {
   return text.replace(/<\/(style)/gi, "<\\/$1");
 }
 
+/** Escapes text for a double-quoted HTML attribute value. */
+export function escapeAttribute(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/**
+ * A <style> element as text. The CSS cannot close the element early (see escapeInlineStyle) and attribute values
+ * are escaped. Attribute NAMES must be fixed constants chosen by the loader, never anything from an app.
+ */
+export function inlineStyleTag(css: string, attributes: Readonly<Record<string, string>> = {}): string {
+  const attrs = Object.entries(attributes).map(([name, value]) => ` ${name}="${escapeAttribute(value)}"`).join("");
+  return `<style${attrs}>${escapeInlineStyle(css)}</style>`;
+}
+
+/**
+ * Swaps each marker comment `<!--hp-TOKEN-N-->` in finished page text for fragment N, in one pass. TOKEN is random
+ * for each load, so nothing an app or a note contains can look like a marker. The replacement is a function so
+ * characters such as `$&` in CSS are never read as replacement patterns, and fragments are not searched again.
+ */
+export function fillMarkers(page: string, token: string, fragments: readonly string[]): string {
+  if (!/^[0-9a-z]+$/i.test(token)) throw new Error("Invalid marker token.");
+  const pattern = new RegExp(`<!--hp-${token}-(\\d+)-->`, "g");
+  return page.replace(pattern, (_whole, index: string) => fragments[Number(index)] ?? "");
+}
+
 /** Cheap detection of relative ES module imports, which cannot work once scripts are inlined. */
 export function hasRelativeModuleImport(code: string): boolean {
   return /\bimport\s*(?:[^'"()]*?\bfrom\s*)?['"]\.{0,2}\//.test(code) || /\bimport\s*\(\s*['"]\.{0,2}\//.test(code);

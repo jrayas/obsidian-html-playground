@@ -5,7 +5,8 @@
  *  - folder operations inspect the real directory contents first and refuse excluded, hidden or app items
  *  - the notes whose links Obsidian will rewrite are snapshotted first (including excluded ones)
  *  - bulk operations and every folder delete ask the user; past a hard cap they are refused
- *  - delete only ever goes to a trash (see trash.ts), never a permanent delete
+ *  - a delete that would be permanent always asks, even for one note and even for a trusted app
+ *  - delete follows the user's "Deleted files" setting; if that erases permanently the user is asked first (see trash.ts)
  *  - fail closed: if a snapshot cannot be stored, nothing is moved or deleted
  */
 import { normaliseForMatch } from "../../paths/exclusions";
@@ -27,9 +28,10 @@ async function approve(
   title: string,
   details: string[],
   paths: string[],
+  alwaysAsk = false,
 ): Promise<void> {
   if (verdict === "too_large") throw new BridgeError("TOO_LARGE", "Too many files in one operation.");
-  if (verdict === "ok") return;
+  if (verdict === "ok" && !alwaysAsk) return;
   if (!(await call.confirm({ title, details, paths }))) {
     throw new BridgeError("DENIED", "The user did not approve this operation.");
   }
@@ -121,20 +123,31 @@ export function destructiveOps(): Record<string, Handler> {
           files = (await listFolder(call, path)).files;
         }
         const verdict = planBulk(files.length, kind === "folder", call.limits);
+        const permanent = call.gateway.deletesPermanently();
+        const notNotes = files.filter((f) => !isTextFile(f)).length;
         await approve(
           call,
           verdict,
-          kind === "folder" ? "Delete a folder" : "Delete many files",
-          [`${files.length} file(s) will go to the trash.`, `Path: ${path}`],
+          permanent ? "Delete permanently" : kind === "folder" ? "Delete a folder" : "Delete many files",
+          permanent
+            ? [
+                `Your Obsidian setting "Deleted files" is "Permanently delete": ${files.length} file(s) will be erased, not moved to a trash.`,
+                notNotes > 0
+                  ? `${notNotes} of them are not notes, so no copy can be kept of those. A copy of each note is kept in Snapshots (command: Show snapshots).`
+                  : "A copy of each note is kept in Snapshots (command: Show snapshots) so you can restore it.",
+                `Path: ${path}`,
+              ]
+            : [`${files.length} file(s) will go to the trash.`, `Path: ${path}`],
           files,
+          permanent,
         );
 
         // Snapshot first: a second way back besides the trash. All or nothing.
         const texts = await call.gateway.snapshotTexts(files.filter(isTextFile), call.limits.readTextBytes);
         for (const text of texts) await call.snapshot(text.path, text.content, "files.delete");
 
-        await call.gateway.trashItem(path);
-        return { result: { trashed: true } };
+        await call.gateway.deleteItem(path);
+        return { result: { trashed: !permanent, deleted: true } };
       });
     },
   };
